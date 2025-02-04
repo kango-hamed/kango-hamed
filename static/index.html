@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./style.css">
+  <title>Tâches | ToDo-List</title>
+</head>
+<body>
+  <div class="tasks-container">
+    <div class="title">
+      <h1>Ajouter une tâche</h1>
+    </div>
+
+    <div class="tasks-box">
+        <div class="add-form">
+          <form action="" id="form">
+            <input
+              type="text"
+              name="libelle"
+              placeholder="Nom de la tâche"
+              required
+              id="lib"
+              class="tasks"
+            >
+  
+            <textarea
+              type="text"
+              name="Description de la tâche"
+              placeholder="Description"
+              required
+              id="desc"
+              rows="5"
+            ></textarea>
+  
+            <button type="submit" id="button-add">Ajouter</button>
+          </form>
+        </div>
+
+        <div class="view-tasks-box" id="view-tasks-box">
+        </div>
+    </div>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
