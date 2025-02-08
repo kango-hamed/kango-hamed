@@ -15,7 +15,7 @@ table.setAttribute('id', 'table-view');
 table.classList.add('table-view');
 
 document.addEventListener('DOMContentLoaded', async (e)=>{
-  await updateViewTable(table, viewTable)
+  await updateViewTable(table, viewTable);
 });
 
 addBtn.addEventListener('click', (e) => {

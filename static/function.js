@@ -20,9 +20,8 @@ const fetchData = async ()=>{
   }
 }
 
-const setData = async (data) => {
+const setData = async (data, url) => {
   console.log('setData lancé ✅');
-  const url = 'http://127.0.0.1:3000/taches/ajout';
 
   try {
     const response = await fetch(url, {
@@ -107,7 +106,7 @@ const createTacheView = (table, data, viewTable) =>{
   modBtn.setAttribute('id', 'mod-btn');
   modBtn.appendChild(modImg);
   modBtn.addEventListener('click', (e)=>{
-    modTache(data.id, table, viewTable);
+    createModBox(data, table, viewTable);
   });
 
   const complBtn = document.createElement('button');
@@ -178,6 +177,8 @@ const updateViewTable = async(table, viewTable)=>{
 const addTask = async (table, viewTable, libInput, descInput, event)=>{
   event.preventDefault();
 
+  const url = 'http://127.0.0.1:3000/taches/ajout';
+
   try {
     const { taches } = await fetchData();
     const tachesId = taches.length + 1;
@@ -190,7 +191,7 @@ const addTask = async (table, viewTable, libInput, descInput, event)=>{
         etat:false
       }
   
-      const { succes } = await setData(data);
+      const { succes } = await setData(data, url);
   
       if (succes){
         libInput.value = '';
@@ -232,24 +233,94 @@ const deleteTache = async (id, table, viewTable)=>{
   }
 }
 
-const modTache = async (id, table, viewTable)=>{
+const createModBox = (data, table, viewTable)=>{
+  const {id, lib, desc} = data;
+
+  const container = document.createElement('div');
+  container.setAttribute('id', 'container-block-mod');
+  container.classList.add('container');
+
+  const formMod = document.createElement('form');
+  formMod.setAttribute('id', 'mod-form');
+    
+  const libMod = document.createElement('input');
+  libMod.classList.add('tasks');
+  libMod.setAttribute('id', 'lib-mod');
+  libMod.setAttribute('type', 'text');
+  libMod.setAttribute('placeholder', 'Titre de la tâche');
+  libMod.value = lib;
+
+  const descMod = document.createElement('textarea');
+  descMod.setAttribute('id', 'desc-mod');
+  descMod.setAttribute('type', 'text');
+  descMod.setAttribute('placeholder', 'Description de la tâche');
+  descMod.setAttribute('rows', '5');
+  descMod.value = desc;
+
+  const button = document.createElement('button');
+  button.setAttribute('type', 'submit');
+  button.setAttribute('id', 'button-add');
+  button.innerText = 'Modifier';
+
+  button.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    await modTache(id, { libMod, descMod }, table, viewTable);
+    modBox.classList.remove('show');
+    await updateViewTable(table,viewTable)
+  });
+
+  const imgRetour = document.createElement('img');
+  imgRetour.setAttribute('src', 'images/marque-de-croix.png');
+  imgRetour.setAttribute('alt', 'fermer');
+
+  const retour = document.createElement('button');
+  retour.setAttribute('id', 'return-btn');
+  retour.appendChild(imgRetour);
+
+  const modBox = document.querySelector('.mod-box');
+
+  retour.addEventListener('click', (e)=>{
+    modBox.classList.remove('show');
+  });
+
+  formMod.appendChild(libMod);
+  formMod.appendChild(descMod);
+  formMod.appendChild(button);
+
+  container.appendChild(retour);
+  container.appendChild(formMod);
+
+  modBox.appendChild(container);
+}
+
+const handleModBtn = async (id, data, table, viewTable) => {
+  createModBox(data, table, viewTable);
+}
+
+const modTache = async (id, data, table, viewTable)=>{
   const url = `http://127.0.0.1:3000/taches/modifier?id=${id}`;
   const method = 'PUT';
 
+  const { libInput, descInput} = data;
   try {
-    const message = await setTacheId(url, method);
-  
-    if (message.succes){
-      alert('✅ Tâche terminée !');
-      await loadTableView(table, viewTable);
+    if (libInput.value !== '') {
+      const { succes } = await setData(data);
+
+      if (succes){
+        alert('✅ Tâche ajoutée avec succés !');
+
+        const modBox = document.querySelector('.mod-box');
+        modBox.classList.add('show');
+      }
     }
 
     else{
-      throw new Error(message.error);
+      alert('Tout les champs sont requis !')
     }
+  }
 
-  } catch (error) {
-    console.log(`Erreur : ${error.message}`);
+  catch (error) {
+    console.error(`Error : ${error.message}`);
   }
 }
 
