@@ -20,12 +20,12 @@ const fetchData = async ()=>{
   }
 }
 
-const setData = async (data, url) => {
+const setData = async (data, url, method) => {
   console.log('setData lancé ✅');
 
   try {
     const response = await fetch(url, {
-      method : 'POST',
+      method : method,
       headers : {
         'Content-Type':'application/json'
       },
@@ -66,6 +66,83 @@ const setTacheId = async (url, method) => {
   } catch (error) {
     console.error(`${error.message}`);
   }
+}
+
+const messageBox = ({ message, succes })=>{
+  const container = document.createElement('div');
+  container.setAttribute('id', 'container-block-mod');
+  container.classList.add('container');
+
+  const messageImgContainer = document.createElement('div');
+  messageImgContainer.setAttribute('id', 'container-block-mod');
+  messageImgContainer.classList.add('container');
+
+  const messageContainer = document.createElement('div');
+  messageContainer.setAttribute('id', 'container-block-mod');
+  messageContainer.classList.add('container');
+  messageContainer.innerText = message;
+}
+
+const createModBox = (data, table, viewTable)=>{
+  console.log('✅')
+  const {id, lib, desc} = data;
+
+  const container = document.createElement('div');
+  container.setAttribute('id', 'container-block-mod');
+  container.classList.add('container');
+
+  const formMod = document.createElement('form');
+  formMod.setAttribute('id', 'mod-form');
+    
+  const libMod = document.createElement('input');
+  libMod.classList.add('tasks');
+  libMod.setAttribute('id', 'lib-mod');
+  libMod.setAttribute('type', 'text');
+  libMod.setAttribute('placeholder', 'Titre de la tâche');
+  libMod.value = lib;
+
+  const descMod = document.createElement('textarea');
+  descMod.setAttribute('id', 'desc-mod');
+  descMod.setAttribute('type', 'text');
+  descMod.setAttribute('placeholder', 'Description de la tâche');
+  descMod.setAttribute('rows', '5');
+  descMod.value = desc;
+
+  const button = document.createElement('button');
+  button.setAttribute('type', 'submit');
+  button.setAttribute('id', 'button-add');
+  button.innerText = 'Modifier';
+
+  button.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    await modTache(id, { libMod, descMod }, table, viewTable);
+    await updateViewTable(table,viewTable)
+  });
+
+  const imgRetour = document.createElement('img');
+  imgRetour.setAttribute('src', 'images/marque-de-croix.png');
+  imgRetour.setAttribute('alt', 'fermer');
+
+  const retour = document.createElement('button');
+  retour.setAttribute('id', 'return-btn');
+  retour.appendChild(imgRetour);
+
+  const modBox = document.querySelector('.mod-box');
+
+  modBox.classList.add('show');
+
+  retour.addEventListener('click', (e)=>{
+    modBox.classList.remove('show');
+  });
+
+  formMod.appendChild(libMod);
+  formMod.appendChild(descMod);
+  formMod.appendChild(button);
+
+  container.appendChild(retour);
+  container.appendChild(formMod);
+
+  modBox.appendChild(container);
 }
 
 const createTacheView = (table, data, viewTable) =>{
@@ -191,7 +268,7 @@ const addTask = async (table, viewTable, libInput, descInput, event)=>{
         etat:false
       }
   
-      const { succes } = await setData(data, url);
+      const { succes } = await setData(data, url, 'POST');
   
       if (succes){
         libInput.value = '';
@@ -233,84 +310,27 @@ const deleteTache = async (id, table, viewTable)=>{
   }
 }
 
-const createModBox = (data, table, viewTable)=>{
-  const {id, lib, desc} = data;
-
-  const container = document.createElement('div');
-  container.setAttribute('id', 'container-block-mod');
-  container.classList.add('container');
-
-  const formMod = document.createElement('form');
-  formMod.setAttribute('id', 'mod-form');
-    
-  const libMod = document.createElement('input');
-  libMod.classList.add('tasks');
-  libMod.setAttribute('id', 'lib-mod');
-  libMod.setAttribute('type', 'text');
-  libMod.setAttribute('placeholder', 'Titre de la tâche');
-  libMod.value = lib;
-
-  const descMod = document.createElement('textarea');
-  descMod.setAttribute('id', 'desc-mod');
-  descMod.setAttribute('type', 'text');
-  descMod.setAttribute('placeholder', 'Description de la tâche');
-  descMod.setAttribute('rows', '5');
-  descMod.value = desc;
-
-  const button = document.createElement('button');
-  button.setAttribute('type', 'submit');
-  button.setAttribute('id', 'button-add');
-  button.innerText = 'Modifier';
-
-  button.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    await modTache(id, { libMod, descMod }, table, viewTable);
-    modBox.classList.remove('show');
-    await updateViewTable(table,viewTable)
-  });
-
-  const imgRetour = document.createElement('img');
-  imgRetour.setAttribute('src', 'images/marque-de-croix.png');
-  imgRetour.setAttribute('alt', 'fermer');
-
-  const retour = document.createElement('button');
-  retour.setAttribute('id', 'return-btn');
-  retour.appendChild(imgRetour);
-
-  const modBox = document.querySelector('.mod-box');
-
-  retour.addEventListener('click', (e)=>{
-    modBox.classList.remove('show');
-  });
-
-  formMod.appendChild(libMod);
-  formMod.appendChild(descMod);
-  formMod.appendChild(button);
-
-  container.appendChild(retour);
-  container.appendChild(formMod);
-
-  modBox.appendChild(container);
-}
-
-const handleModBtn = async (id, data, table, viewTable) => {
-  createModBox(data, table, viewTable);
-}
-
 const modTache = async (id, data, table, viewTable)=>{
   const url = `http://127.0.0.1:3000/taches/modifier?id=${id}`;
   const method = 'PUT';
 
-  const { libInput, descInput} = data;
+  const modBox = document.querySelector('.mod-box');
+
+  const { libMod, descMod} = data;
   try {
-    if (libInput.value !== '') {
-      const { succes } = await setData(data);
+    if (libMod.value !== '') {
+      const { succes } = await setData(
+        { 
+          lib:libMod.value,
+          desc:descMod.value
+        },
+        url,
+        'PUT'
+      );
 
       if (succes){
-        alert('✅ Tâche ajoutée avec succés !');
-
-        const modBox = document.querySelector('.mod-box');
-        modBox.classList.add('show');
+        alert('✅ Tâche modifié avec succés !');
+        modBox.classList.remove('show');
       }
     }
 

@@ -178,6 +178,56 @@ const server = http.createServer((req,res)=>{
         
         return readTacheFile()
             .then((taches)=>{
+              const {lib, desc} = JSON.parse(data);
+              console.log(data);
+              const tachesArray = JSON.parse(taches);
+
+              const newTableTaches = tachesArray.map(tache =>{
+                if (tache.id === id) {
+                  tache.lib = lib;
+                  tache.desc = desc;
+
+                  console.log(tache);
+                }
+
+                return tache;
+              });
+
+              fs.writeFile(tachePath, JSON.stringify(newTableTaches), (err) => {
+                if (err) {
+                  res.writeHead(500, { 'Content-Type':'application/json' });
+                  res.end(JSON.stringify({ error: err.message }));
+                }
+            
+                else{
+                  res.writeHead(200, { 'Content-Type':'application/json' });
+                  res.end(JSON.stringify( { 
+                    succes:true, tache:newTableTaches[0] 
+                  }));
+                }
+              });
+            })
+            .catch(error => {
+              console.error(`Erreur : ${error.message}`);
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: error.message }));
+            })
+      });
+    }
+
+    else if(req.url.startsWith('/taches/modifier') && req.method === 'PUT'){
+      const parsedUrl = url.parse(req.url, true);
+      const id = parseInt(parsedUrl.query.id);
+      let data = '';
+
+      req.on('data', chunk =>{
+        data += chunk;
+      });
+
+      req.on('end', () => {
+        
+        return readTacheFile()
+            .then((taches)=>{
               const {lib, desc} = data;
               const tachesArray = JSON.parse(taches);
               console.log(taches);
