@@ -186,8 +186,6 @@ const server = http.createServer((req,res)=>{
                 if (tache.id === id) {
                   tache.lib = lib;
                   tache.desc = desc;
-
-                  console.log(tache);
                 }
 
                 return tache;
@@ -202,7 +200,7 @@ const server = http.createServer((req,res)=>{
                 else{
                   res.writeHead(200, { 'Content-Type':'application/json' });
                   res.end(JSON.stringify( { 
-                    succes:true, tache:newTableTaches[0] 
+                    succes:true 
                   }));
                 }
               });
@@ -215,52 +213,43 @@ const server = http.createServer((req,res)=>{
       });
     }
 
-    else if(req.url.startsWith('/taches/modifier') && req.method === 'PUT'){
+    else if(req.url.startsWith('/taches/terminer') && req.method === 'PUT'){
       const parsedUrl = url.parse(req.url, true);
       const id = parseInt(parsedUrl.query.id);
-      let data = '';
 
-      req.on('data', chunk =>{
-        data += chunk;
-      });
+      readTacheFile()
+        .then((taches)=>{
+          const tachesArray = JSON.parse(taches);
+          let etat;
 
-      req.on('end', () => {
+          const newTableTaches = tachesArray.map(tache =>{
+            if (tache.id === id) {
+              tache.etat = tache.etat ? false:true;
+              etat = tache.etat;
+            }
+
+            return tache;
+          });
+          fs.writeFile(tachePath, JSON.stringify(newTableTaches), (err) => {
+            if (err) {
+                 res.writeHead(500, { 'Content-Type':'application/json' });
+                 res.end(JSON.stringify({ error: err.message }));
+               }
         
-        return readTacheFile()
-            .then((taches)=>{
-              const {lib, desc} = data;
-              const tachesArray = JSON.parse(taches);
-              console.log(taches);
-              const newTableTaches = tachesArray.map(tache =>{
-                console.log(tache);
-                if (tache.id === id) {
-                  tache.lib = lib;
-                  tache.desc = desc;
-                }
-              });
-
-              console.log('MIse à jour effectuée ✅')
-
-              // fs.writeFile(tachePath, JSON.stringify(newTableTaches), (err) => {
-              //     if (err) {
-              //       res.writeHead(500, { 'Content-Type':'application/json' });
-              //       res.end(JSON.stringify({ error: err.message }));
-              //     }
-            
-              //     else{
-              //       res.writeHead(200, { 'Content-Type':'application/json' });
-              //       res.end(JSON.stringify( { 
-              //         succes:true, tache:newTableTaches[0] 
-              //       }));
-              //     }
-              // });
-            })
-            .catch(error => {
-              console.error(`Erreur : ${error.message}`);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: error.message }));
-            })
-      });
+               else{
+                 res.writeHead(200, { 'Content-Type':'application/json' });
+                 res.end(JSON.stringify( {
+                   succes:true,
+                   etat
+                 }));
+               }
+           });
+        })
+        .catch(error => {
+          console.error(`Erreur : ${error.message}`);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+        })
     }
 
     else if(req.url.startsWith('/taches/supprimer') && req.method === 'DELETE'){

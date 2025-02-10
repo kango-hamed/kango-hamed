@@ -56,7 +56,7 @@ const setTacheId = async (url, method) => {
     console.log('Requête envoyé ✅');
     if(!response.ok){
       throw new Error(
-        `❌ Erreur lors de l'ajout de la tâche ! : ${response.statusText}`
+        `❌ Erreur : ${response.statusText}`
       );
     }
     
@@ -68,28 +68,63 @@ const setTacheId = async (url, method) => {
   }
 }
 
-const messageBox = ({ message, succes })=>{
+const messageBox = ({ message, succes }, modBox) => {
+  const src = succes ? 'images/succes.png' : 'images/annuler.png';
+
+  // Création du conteneur du message
   const container = document.createElement('div');
   container.setAttribute('id', 'container-block-mod');
-  container.classList.add('container');
+  container.classList.add('message-container');
 
-  const messageImgContainer = document.createElement('div');
-  messageImgContainer.setAttribute('id', 'container-block-mod');
-  messageImgContainer.classList.add('container');
+  // Image d'état (succès ou erreur)
+  const messageImg = document.createElement('img');
+  messageImg.setAttribute('src', src);
+  messageImg.setAttribute('alt', succes ? 'Succès' : 'Erreur');
+  messageImg.classList.add('message-img');
 
-  const messageContainer = document.createElement('div');
-  messageContainer.setAttribute('id', 'container-block-mod');
-  messageContainer.classList.add('container');
-  messageContainer.innerText = message;
+  // Conteneur du texte du message
+  const messageText = document.createElement('p');
+  messageText.innerText = message;
+  messageText.classList.add('message-text');
+
+  // Bouton de fermeture
+  const imgRetour = document.createElement('img');
+  imgRetour.setAttribute('src', 'images/marque-de-croix.png');
+  imgRetour.setAttribute('alt', 'Fermer');
+
+  const retour = document.createElement('button');
+  retour.setAttribute('id', 'return-btn');
+  retour.appendChild(imgRetour);
+
+  // Ajout du bouton à l'événement de fermeture
+  retour.addEventListener('click', () => {
+      modBox.classList.remove('show');
+      modBox.innerHTML = ''; // Nettoyage du contenu après fermeture
+  });
+
+  // Ajout des éléments dans le conteneur
+  container.appendChild(retour);
+  container.appendChild(messageImg);
+  container.appendChild(messageText);
+
+  // Ajout au modal
+  modBox.appendChild(container);
+  modBox.classList.add('show');
+};
+
+
+const handleMessage = ({ succes, message})=>{
+  const modBox = document.querySelector('.mod-box');
+  messageBox({ succes, message}, modBox);
 }
 
 const createModBox = (data, table, viewTable)=>{
-  console.log('✅')
   const {id, lib, desc} = data;
 
   const container = document.createElement('div');
   container.setAttribute('id', 'container-block-mod');
   container.classList.add('container');
+  container.classList.add('show');
 
   const formMod = document.createElement('form');
   formMod.setAttribute('id', 'mod-form');
@@ -132,6 +167,7 @@ const createModBox = (data, table, viewTable)=>{
   modBox.classList.add('show');
 
   retour.addEventListener('click', (e)=>{
+    container.classList.remove('show');
     modBox.classList.remove('show');
   });
 
@@ -164,7 +200,11 @@ const createTacheView = (table, data, viewTable) =>{
   row.classList.add(etat ? 'terminee':'en-cours');
 
   const libCel = row.insertCell(0);
+  libCel.classList.add('lib-cel');
   libCel.innerText = lib;
+  libCel.addEventListener('click', ()=>{
+    handledisplayTache(data);
+  });
 
   const stateCel = row.insertCell(1);
   stateCel.innerText = etat ? 'Terminée':'En cours';
@@ -251,6 +291,49 @@ const updateViewTable = async(table, viewTable)=>{
   }
 }
 
+const createDisplayTache = (modBox, {lib, desc})=>{
+  const container = document.createElement('div');
+  container.setAttribute('id', 'container-block-mod');
+  container.classList.add('message-container');
+
+  const tacheLib = document.createElement('h2');
+  tacheLib.innerText = lib;
+  tacheLib.classList.add('tache-text');
+
+  const tacheDesc = document.createElement('p');
+  tacheDesc.innerText = desc;
+  tacheDesc.classList.add('tache-text');
+
+  // Bouton de fermeture
+  const imgRetour = document.createElement('img');
+  imgRetour.setAttribute('src', 'images/marque-de-croix.png');
+  imgRetour.setAttribute('alt', 'Fermer');
+
+  const retour = document.createElement('button');
+  retour.setAttribute('id', 'return-btn');
+  retour.appendChild(imgRetour);
+
+  // Ajout du bouton à l'événement de fermeture
+  retour.addEventListener('click', () => {
+      modBox.classList.remove('show');
+      modBox.innerHTML = '';
+  });
+
+  // Ajout des éléments dans le conteneur
+  container.appendChild(retour);
+  container.appendChild(tacheLib);
+  container.appendChild(tacheDesc);
+
+  // Ajout au modal
+  modBox.appendChild(container);
+  modBox.classList.add('show');}
+
+const handledisplayTache = (data)=>{
+  const modBox = document.querySelector('.mod-box');
+  const { lib, desc } = data;
+  createDisplayTache(modBox, { lib, desc });
+}
+
 const addTask = async (table, viewTable, libInput, descInput, event)=>{
   event.preventDefault();
 
@@ -274,13 +357,19 @@ const addTask = async (table, viewTable, libInput, descInput, event)=>{
         libInput.value = '';
         descInput.value = '';
   
-        alert('✅ Tâche ajoutée avec succés !')
+        handleMessage({ 
+          message:'Tâche ajoutée avec succés !',
+          succes
+        });
   
         await updateViewTable(table,viewTable)
       }
     }
     else{
-      alert('Tout les champs sont requis !')
+      handleMessage({ 
+        message:'Tous les champs sont réquis !',
+        succes:false
+      });
     }
   }
 
@@ -294,10 +383,13 @@ const deleteTache = async (id, table, viewTable)=>{
   const method = 'DELETE';
 
   try {
-    const message = await setTacheId(url, method);
+    const { succes } = await setTacheId(url, method);
   
-    if (message.succes){
-      alert('✅ Tâche supprimée avec succés !');
+    if (succes){
+      handleMessage({ 
+        message:'Tâche supprimée avec succés !',
+        succes
+      });
       await updateViewTable(table,viewTable);
     }
 
@@ -315,6 +407,7 @@ const modTache = async (id, data, table, viewTable)=>{
   const method = 'PUT';
 
   const modBox = document.querySelector('.mod-box');
+  const container = modBox.querySelector('.container');
 
   const { libMod, descMod} = data;
   try {
@@ -329,8 +422,11 @@ const modTache = async (id, data, table, viewTable)=>{
       );
 
       if (succes){
-        alert('✅ Tâche modifié avec succés !');
-        modBox.classList.remove('show');
+        handleMessage({ 
+          message:'Tâche modifiée avec succés !',
+          succes
+        });
+        container.classList.remove('show');
       }
     }
 
@@ -350,10 +446,18 @@ const complTache = async (id, table, viewTable)=>{
   const method = 'PUT';
 
   try {
-    const message = await setTacheId(url, method);
+    const { succes, etat } = await setTacheId(url, method);
   
-    if (message.succes){
-      alert('✅ Tâche modifiée avec succés !');
+    if (succes){
+      const message = etat ? 'terminée':'en cours';
+
+      if (etat) {
+        handleMessage({ 
+          message:`Tâche ${ message } !`,
+          succes
+        });
+      }
+
       await loadTableView(table, viewTable);
     }
 
